@@ -1,24 +1,47 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import Register from './components/Register';
+import Login from './components/Login';
+import Dashboard from './components/Dashboard';
+import EmployeeList from './components/EmployeeList';
+import EmployeeForm from './components/EmployeeForm';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <div className="App">
+      
+        <Routes>
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+          <Route 
+            path="/dashboard" 
+            element={
+              localStorage.getItem('isLoggedIn') ? <Dashboard /> : <Navigate to="/login" />
+            } 
+          />
+          <Route 
+            path="/employees" 
+            element={
+              localStorage.getItem('isLoggedIn') ? <EmployeeList /> : <Navigate to="/login" />
+            } 
+          />
+          <Route 
+            path="/add-employee" 
+            element={
+              localStorage.getItem('isLoggedIn') ? <EmployeeForm /> : <Navigate to="/login" />
+            } 
+          />
+           <Route 
+            path="/add-employee/:id" 
+            element={
+              localStorage.getItem('isLoggedIn') ? <EmployeeForm /> : <Navigate to="/login" />
+            } 
+          />
+          <Route path="/" element={<Navigate to="/register" />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
