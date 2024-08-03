@@ -7,11 +7,14 @@ function EmployeeForm() {
     name: '',
     email: '',
     mobile: '',
-    course: '',
+    course: [],
     gender: '',
     designation: '',
-    create_date:''
+    create_date:'',
+    image:null
   });
+
+  const [previewImage, setPreviewImage] = useState(null); 
   const [error, setError] = useState(null);
   const { id } = useParams();
   const navigate = useNavigate();
@@ -19,14 +22,21 @@ function EmployeeForm() {
   const fetchEmployee = useCallback(async () => {
     try {
       const response = await axios.patch(`http://localhost:4000/api/employee/edit/${id}`);
+      const employeeData = response.data.employee;
       setFormData(response.data.employee);
+      console.log('Fetched Employee Data:', employeeData);
+      const courses = Array.isArray(employeeData.course)
+      ? Array.from(new Set(employeeData.course))
+      : employeeData.course ? [employeeData.course] : [];
+
+                      setFormData({...employeeData, course: courses});
     } catch (error) {
       console.error('Error fetching employee:', error);
-      if (error.response && error.response.status === 404) {
-        setError('Employee not found');
-      } else {
-        setError('Error fetching employee');
-      }
+      // if (error.response && error.response.status === 404) {
+      //   setError('Employee not found');
+      // } else {
+      //   setError('Error fetching employee');
+      // }
     }
   }, [id]);
 
@@ -38,21 +48,70 @@ function EmployeeForm() {
   }, [id, fetchEmployee]);
 
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const courses = ['React', 'Nodejs', 'Mern', 'Java'];
+
+const handleChange = (e) => {
+    const { name, value, checked, type } = e.target;
+
+    console.log(`Changed field: ${name}, value: ${value}, checked: ${checked}, type: ${type}`);
+
+    if (type === 'checkbox') {
+      setFormData((prevData) => {
+        const updatedCourses = new Set(prevData.course);
+        if (checked) {
+          updatedCourses.add(value);
+        } else {
+          updatedCourses.delete(value);
+        }
+        return { ...prevData, course: Array.from(updatedCourses) };
+      });
+    } else if (type === 'file') {
+      setFormData((prevData) => ({
+        ...prevData,
+        [name]: e.target.files[0],
+      }));
+      setPreviewImage(URL.createObjectURL(e.target.files[0]));
+    } else {
+      setFormData((prevData) => ({
+        ...prevData,
+        [name]: value,
+      }));
+    }
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (id) {
-        await axios.patch(`http://localhost:4000/api/employee/edit/${id}`, formData);
-      } else {
-        await axios.post('http://localhost:4000/api/employee/add', formData);
-      }
-      navigate('/employees');
+      let formDataToSend = new FormData();
+        for (let key in formData) {
+            if (key === 'image' && formData[key]) {
+                formDataToSend.append(key, formData[key]);
+              } else if (key === 'course') {
+                // Join the course array into a string
+                formDataToSend.append(key, formData[key].join(','));
+              } else {
+                formDataToSend.append(key, formData[key]);
+              }
+        }
+
+
+        if (id) {
+          await axios.patch(`http://localhost:4000/api/employee/edit/${id}`, formDataToSend, {
+            headers: {
+              'Content-Type': 'multipart/form-data', // Important for file uploads
+            },
+          });
+        } else {
+          await axios.post('http://localhost:4000/api/employee/add', formDataToSend, {
+            headers: {
+              'Content-Type': 'multipart/form-data', // Important for file uploads
+            },
+          });
+        }
+        navigate('/employees');
     } catch (error) {
-      console.error('Error submitting form:', error);
+      // console.error('Error submitting form:', error);
       setError('Error submitting form');
     }
   };
@@ -109,18 +168,30 @@ function EmployeeForm() {
                   value={formData.mobile} onChange={handleChange} required />
               </div>
               <div className="mb-3">
-                <label htmlFor="course" className="form-label">Course</label>
-                <input type="text" className="form-control" id="course" name="course"
-                  value={formData.course} onChange={handleChange} required />
-              </div>
+              <label htmlFor="course" className="form-label">Courses</label>
+              {courses.map((course, index) => (
+                  <div key={index}>
+                      <input
+                          type="checkbox"
+                          id={`course_${index}`}
+                          name="course"
+                          value={course}
+                          onChange={handleChange}
+                          checked={formData.course.includes(course)}
+                      />
+                      <label htmlFor={`course_${index}`} className="form-label">{course}</label>
+                  </div>
+              ))}
+          </div>
+
               <div className="mb-3">
                 <label htmlFor="designation" className="form-label">Designation</label>
                 <select type="text" className="form-select" id="designation" name="designation"
                   value={formData.designation} onChange={handleChange} required>
                     <option value="">Select Designation</option>
-                  <option value="Male">HR</option>
-                  <option value="Female">Manager</option>
-                  <option value="Other">Developer</option>
+                  <option value="hr">HR</option>
+                  <option value="manager">Manager</option>
+                  <option value="developer">Developer</option>
                   <option value="Other">Other</option>
                   </select>
               </div>
@@ -153,6 +224,22 @@ function EmployeeForm() {
                 <input type="date" className="form-control" id="create_date" name="create_date"
                   value={formData.create_date} onChange={handleChange} required />
               </div>
+              <div className="mb-3">
+                  <label htmlFor="image" className="form-label">Profile Image</label>
+                  <input
+                    type="file"
+                    className="form-control"
+                    id="image"
+                    name="image"
+                    onChange={handleChange}
+                    accept="image/*"
+                  />
+                </div>
+                {previewImage && (
+                  <div className="mb-3">
+                    <img src={previewImage} alt="Preview" style={{ maxWidth: '200px' }} />
+                  </div>
+                )}
 
               <div className="d-grid gap-2">
                 <button type="submit" className="btn btn-primary">

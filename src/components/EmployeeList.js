@@ -67,7 +67,7 @@ function EmployeeList() {
         <table className="table table-striped table-hover">
           <thead className="table-dark">
             <tr>
-               
+               <th>Image</th>
               <th>Name</th>
               <th>Email</th>
               <th>Mobile</th>
@@ -81,6 +81,15 @@ function EmployeeList() {
           <tbody>
             {employees.map(employee => (
               <tr key={employee._id}>
+                 <td>
+                  {employee.image && (
+                    <img 
+                      src={`http://localhost:4000/${employee.image}`} 
+                      alt={`${employee.name}'s profile`} 
+                      style={{width: '50px', height: '50px', objectFit: 'cover'}}
+                    />
+                  )}
+                </td>
                 <td>{employee.name}</td>
                 <td>{employee.email}</td>
                 <td>{employee.mobile}</td>
